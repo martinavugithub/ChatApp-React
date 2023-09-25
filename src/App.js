@@ -1,49 +1,81 @@
-import React, { useState, useRef } from 'react';
-import Messages from './components/Messages';
-import Input from './components/Input';
+import React, { useState } from 'react';
+import Login from './components/Login';
+import ChatRoom from './components/ChatRoom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
-function randomName() {
-  const pokemonNames = [
-    'Bulbasaur', 'Charmander', 'Squirtle', 'Pikachu', 'Jigglypuff', 'Meowth',
-    'Psyduck', 'Snorlax', 'Dragonite', 'Mewtwo', 'Chikorita', 'Cyndaquil',
-    'Totodile', 'Togepi', 'Mareep', 'Typhlosion', 'Feraligatr', 'Unown',
-    'Wobbuffet', 'Girafarig', 'Shuckle', 'Swinub', 'Lugia', 'Ho-Oh',
-    'Treecko', 'Torchic', 'Mudkip', 'Beautifly', 'Mightyena', 'Wurmple',
-    'Gardevoir', 'Exploud', 'Kyogre', 'Groudon', 'Rayquaza', 'Turtwig',
-    'Chimchar', 'Piplup', 'Luxray', 'Lucario'
-  ];
-  return pokemonNames[Math.floor(Math.random() * pokemonNames.length)];
-}
+const CHANNEL_ID = 'oF7N20yHG9tPm0b8';
+const ROOM_NAME = 'observable-algebra';
+const Scaledrone = window.Scaledrone;
 
-function randomColor() {
-  return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16);
-}
-
-export default function App() {
+function App() {
+  const [clientName, setClientName] = useState(null);
+  const [clientColor, setClientColor] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [me, setMe] = useState({
-    username: randomName(),
-    color: randomColor(),
-  });
+  const [members, setMembers] = useState([]);
+  const [drone, setDrone] = useState(null);
+  const [receivedMessages, setReceivedMessages] = useState([]); // Dodajte ovu liniju
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false); // Dodajte ovu liniju
 
-  const messagesRef = useRef(messages);
+  const handleLogin = (data) => {
+    setClientName(data.username);
+    setClientColor(data.color);
+    setIsUserLoggedIn(true);
 
-  const onSendMessage = (message) => {
-    const newMessage = {
-      data: message,
-      member: me,
-    };
-    setMessages([...messagesRef.current, newMessage]);
+    const droneInstance = new Scaledrone(CHANNEL_ID, {
+      data: { name: data.username, color: data.color },
+    });
+
+    droneInstance.on('message', (message) => {
+      setReceivedMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          content: message.data.content,
+          clientData: { name: message.client.name, color: message.client.color },
+        },
+      ]);
+    });
+
+    setDrone(droneInstance);
+  };
+
+  const addMessage = (messageText, member) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        content: messageText,
+        clientData: { name: member, color: clientColor },
+      },
+    ]);
   };
 
   return (
     <div className="App">
       <Header />
-      <Messages messages={messages} me={me} />
-      <Input onSendMessage={onSendMessage} />
+      {isUserLoggedIn ? (
+        <ChatRoom
+          clientName={clientName}
+          clientColor={clientColor}
+          roomName={ROOM_NAME}
+          messages={messages}
+          receivedMessages={receivedMessages}
+          members={members}
+          onSendMessage={(messageText) => {
+            drone.publish({
+              room: ROOM_NAME,
+              message: { content: messageText, member: clientName },
+            });
+
+            addMessage(messageText, clientName);
+          }}
+          drone={drone}
+        />
+      ) : (
+        <Login onLogin={handleLogin} />
+      )}
       <Footer />
     </div>
   );
 }
+
+export default App;
