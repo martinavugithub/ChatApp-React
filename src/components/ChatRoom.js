@@ -15,6 +15,8 @@ function ChatRoom({ roomName, onSendMessage }) {
   const handleSendMessage = (messageText) => {
     if (messageText.trim() === '') return;
 
+    console.log('Message:', messageText);
+
     const newMessage = {
       content: messageText,
       clientData: { name: clientData.current.name, color: clientData.current.color },
@@ -57,7 +59,9 @@ function ChatRoom({ roomName, onSendMessage }) {
 
     room.on('message', (message) => {
       setReceivedMessages((prevMessages) => [...prevMessages, message]);
+      console.log('received-message:', message);
     });
+
   }, [roomName]);
 
   useEffect(() => {
@@ -77,37 +81,35 @@ function ChatRoom({ roomName, onSendMessage }) {
       <div className="messages">
         {sentMessages.map((message, index) => (
           <div key={index} className="message">
-            {message.clientData && (
-              <span style={{ color: message.clientData.color }}>{message.clientData.name}:</span>
-            )}
-            {message.clientData && (
-              <span style={{ color: message.clientData.color }}>{message.content}</span>
-            )}
-          </div>
+  {message.clientData && message.clientData.color && (
+    <span style={{ color: message.clientData.color }}>
+      {message.clientData.name}: {message.content}
+    </span>
+  )}
+</div>
         ))}
         <div ref={bottomSentRef} />
       </div>
-  
+
       <div className="received-messages">
         {receivedMessages.map((message, index) => (
           <div key={index} className="received-message">
-            {message.clientData && (
-              <span style={{ color: message.clientData.color }}>{message.clientData.name}:</span>
+            {message.clientData && message.clientData.color && (
+              <span style={{ color: message.clientData.color }}>
+                {message.clientData.name}:
+              </span>
             )}
-            {message.clientData && (
-              <span style={{ color: message.clientData.color }}>{message.content}</span>
-            )}
+            <span>
+              {message.data && message.data.content}
+            </span>
           </div>
         ))}
-        <div ref={bottomReceivedRef} />
       </div>
 
-  
       <Input onSendMessage={handleSendMessage} />
       <div>Status: {scaleDroneStatus}</div>
     </div>
   );
-  
 }
-
 export default ChatRoom;
+
