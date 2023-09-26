@@ -1,0 +1,14 @@
+.chat-room {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    margin: 10px auto;
+    padding: 10px;
+    width: 70%;
+    height: 500px;
+    border: 1px solid grey;
+    border-radius: 20px;
+    background: #f2f5fc;
+    overflow-y: scroll;
+  }
+  
